@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Briefcase, Users, Activity, Zap, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 const TEAM_MEMBERS = [
-  { id: 1, name: 'Alice Walker', role: 'Lead Designer', workload: 85, projects: 3, allocations: [{name: 'Design System Reboot', percentage: 40}, {name: 'Q3 Product Launch', percentage: 30}, {name: 'Marketing Site', percentage: 15}] },
-  { id: 2, name: 'Bob Chen', role: 'Frontend Engineer', workload: 60, projects: 2, allocations: [{name: 'Mobile App Beta', percentage: 40}, {name: 'Design System Reboot', percentage: 20}] },
-  { id: 3, name: 'Clara Diaz', role: 'Product Manager', workload: 95, projects: 4, allocations: [{name: 'Q3 Product Launch', percentage: 40}, {name: 'Mobile App Beta', percentage: 30}, {name: 'Infrastructure Scale', percentage: 15}, {name: 'User Research', percentage: 10}] },
-  { id: 4, name: 'David Smith', role: 'Backend Engineer', workload: 40, projects: 1, allocations: [{name: 'Infrastructure Scale', percentage: 40}] },
+  { id: 1, name: 'Alice Walker', role: 'Lead Designer', workload: 85, projects: 3, allocations: [{ name: 'Design System Reboot', percentage: 40 }, { name: 'Q3 Product Launch', percentage: 30 }, { name: 'Marketing Site', percentage: 15 }] },
+  { id: 2, name: 'Bob Chen', role: 'Frontend Engineer', workload: 60, projects: 2, allocations: [{ name: 'Mobile App Beta', percentage: 40 }, { name: 'Design System Reboot', percentage: 20 }] },
+  { id: 3, name: 'Clara Diaz', role: 'Product Manager', workload: 95, projects: 4, allocations: [{ name: 'Q3 Product Launch', percentage: 40 }, { name: 'Mobile App Beta', percentage: 30 }, { name: 'Infrastructure Scale', percentage: 15 }, { name: 'User Research', percentage: 10 }] },
+  { id: 4, name: 'David Smith', role: 'Backend Engineer', workload: 40, projects: 1, allocations: [{ name: 'Infrastructure Scale', percentage: 40 }] },
 ];
 
 const WORKSTREAMS = [
@@ -16,13 +16,68 @@ const WORKSTREAMS = [
 ];
 
 const PRIORITIES = [
-  { id: 1, kicker: 'Q3 Okr', title: 'Accelerate User Onboarding', description: 'Decrease time to first value by 20% by simplifying the signup flow.' },
-  { id: 2, kicker: 'Critical', title: 'SOC2 Compliance Audit', description: 'Complete all security policy reviews and technical implementations by end of August.' },
+  { id: 1, kicker: 'Critical Path', title: 'Accelerate User Onboarding', description: 'Decrease time to first value by 20% by simplifying the signup flow.', progress: 72 },
+  { id: 2, kicker: 'In Progress', title: 'SOC2 Compliance Audit', description: 'Complete all security policy reviews and technical implementations by end of August.', progress: 35 },
 ];
+
+type Member = typeof TEAM_MEMBERS[number];
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.7rem', letterSpacing: '0.14em', color: 'var(--stone)', textTransform: 'uppercase', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--signal)', flexShrink: 0 }} />
+      {children}
+    </p>
+  );
+}
+
+function WorkloadBadge({ workload }: { workload: number }) {
+  const isHigh = workload >= 90;
+  const isOpen = workload < 50;
+  const label = isHigh ? 'High' : isOpen ? 'Open' : 'Ideal';
+  const style: React.CSSProperties = isHigh
+    ? { background: 'rgba(255,74,28,0.15)', color: 'var(--signal)', border: '1px solid rgba(255,74,28,0.3)' }
+    : isOpen
+    ? { background: 'rgba(228,255,71,0.12)', color: 'var(--citron)', border: '1px solid rgba(228,255,71,0.25)' }
+    : { background: 'rgba(240,235,226,0.07)', color: 'var(--stone)', border: '1px solid var(--ash)' };
+  return (
+    <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.65rem', letterSpacing: '0.1em', padding: '2px 8px', borderRadius: 999, textTransform: 'uppercase', ...style }}>
+      {label}
+    </span>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const isRisk = status === 'At Risk';
+  const isDelayed = status === 'Delayed';
+  const style: React.CSSProperties = isDelayed
+    ? { background: 'rgba(255,74,28,0.15)', color: 'var(--signal)', border: '1px solid rgba(255,74,28,0.3)' }
+    : isRisk
+    ? { background: 'rgba(255,74,28,0.08)', color: '#FF8A6A', border: '1px solid rgba(255,74,28,0.2)' }
+    : { background: 'rgba(228,255,71,0.10)', color: 'var(--citron)', border: '1px solid rgba(228,255,71,0.2)' };
+  return (
+    <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.65rem', letterSpacing: '0.1em', padding: '2px 8px', borderRadius: 999, textTransform: 'uppercase', ...style }}>
+      {status}
+    </span>
+  );
+}
+
+function ProgressBar({ value, signal = false }: { value: number; signal?: boolean }) {
+  return (
+    <div style={{ width: '100%', height: 2, background: 'var(--ash)', borderRadius: 2, overflow: 'hidden' }}>
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: `${value}%` }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+        style={{ height: '100%', background: signal ? 'var(--signal)' : 'var(--graphite)', borderRadius: 2 }}
+      />
+    </div>
+  );
+}
 
 export default function App() {
   const [dateStr, setDateStr] = useState('');
-  const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
   useEffect(() => {
     const today = new Date();
@@ -32,191 +87,215 @@ export default function App() {
     setDateStr(`${mm} / ${dd} / ${yy}`);
   }, []);
 
+  const handleMemberClick = (member: Member) => {
+    setSelectedMember(prev => prev?.id === member.id ? null : member);
+  };
+
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-[#F5F5F5] font-sans p-4 md:p-10 flex flex-col overflow-x-hidden select-none">
-      {/* Header Section */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-white/20 pb-6 mb-8 gap-4">
+    <div style={{ minHeight: '100vh', background: 'var(--bone)', color: 'var(--ink)', padding: 'clamp(1.5rem, 4vw, 2.5rem)', display: 'flex', flexDirection: 'column', userSelect: 'none' }}>
+
+      {/* Header */}
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--ash)', paddingBottom: '1.5rem', marginBottom: '2.5rem', gap: '1rem', flexWrap: 'wrap' }}>
         <div>
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-none uppercase">Portal.V2</h1>
-          <p className="text-[10px] md:text-xs tracking-[0.2em] md:tracking-[0.3em] font-light opacity-60 mt-4 md:mt-2 uppercase">INTERNAL PROJECT MANAGEMENT & WORKLOAD SYSTEM</p>
+          <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 'clamp(3rem, 8vw, 6rem)', fontWeight: 400, fontVariationSettings: '"SOFT" 20, "opsz" 144', letterSpacing: '-0.04em', lineHeight: 0.92, margin: 0, color: 'var(--ink)' }}>
+            Portal.V2
+          </h1>
+          <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.65rem', letterSpacing: '0.22em', color: 'var(--stone)', marginTop: '0.75rem', textTransform: 'uppercase' }}>
+            Internal Project Management &amp; Workload System
+          </p>
         </div>
-        <div className="md:text-right">
-          <p className="text-2xl md:text-3xl font-light tabular-nums">{dateStr || '12 / 04 / 24'}</p>
-          <p className="text-[10px] tracking-widest uppercase opacity-40 mt-1 md:scale-100 origin-left md:origin-right">Central Standard Time</p>
+        <div style={{ textAlign: 'right' }}>
+          <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: 'clamp(1.25rem, 3vw, 1.75rem)', color: 'var(--graphite)', margin: 0, fontWeight: 400 }}>
+            {dateStr}
+          </p>
+          <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', letterSpacing: '0.18em', color: 'var(--stone)', marginTop: '4px', textTransform: 'uppercase' }}>
+            Central Standard Time
+          </p>
         </div>
       </header>
 
-      <main className="grid grid-cols-1 xl:grid-cols-12 gap-8 flex-grow">
-        {/* LEFT: PRIORITY INITIATIVES */}
-        <section className="col-span-1 xl:col-span-4 flex flex-col">
-          <h2 className="text-xs font-bold tracking-[0.2em] uppercase mb-6 flex items-center">
-            <span className="w-2 h-2 bg-red-500 mr-2"></span>
-            Priority Initiatives
-          </h2>
-          <div className="space-y-4">
-            {PRIORITIES.map((p, index) => (
-              <div key={p.id} className={`bg-[#141414] border border-white/10 p-6 rounded-sm ${index > 0 ? 'opacity-60' : ''}`}>
-                <p className={`text-[10px] ${index === 0 ? 'text-red-500' : 'text-white/50'} font-bold uppercase mb-1 italic`}>
-                  {index === 0 ? 'Critical Path' : 'In Progress'} - {p.kicker}
+      {/* Main Grid */}
+      <main style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', flex: 1 }}>
+
+        {/* Priority Initiatives */}
+        <section>
+          <SectionLabel>Priority Initiatives</SectionLabel>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {PRIORITIES.map((p, i) => (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: i * 0.08 }}
+                style={{ background: 'var(--paper)', border: `1px solid ${i === 0 ? 'rgba(255,74,28,0.3)' : 'var(--ash)'}`, borderRadius: 4, padding: '1.5rem', opacity: i === 0 ? 1 : 0.65 }}
+              >
+                <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.65rem', letterSpacing: '0.12em', color: i === 0 ? 'var(--signal)' : 'var(--stone)', textTransform: 'uppercase', margin: '0 0 0.5rem' }}>
+                  {p.kicker}
                 </p>
-                <h3 className="text-3xl font-bold leading-tight">{p.title}</h3>
-                <p className="text-sm text-white/50 mt-2">{p.description}</p>
-                
-                <div className="mt-4 flex justify-between items-end">
-                  <span className="text-[10px] opacity-40 uppercase">Progress</span>
-                  <span className="text-xl font-mono">{index === 0 ? '72%' : '35%'}</span>
+                <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 400, fontVariationSettings: '"SOFT" 30, "opsz" 144', letterSpacing: '-0.025em', lineHeight: 1.05, margin: '0 0 0.5rem', color: 'var(--ink)' }}>
+                  {p.title}
+                </h3>
+                <p style={{ fontSize: '0.8rem', color: 'var(--stone)', margin: '0 0 1.25rem', lineHeight: 1.5 }}>
+                  {p.description}
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.4rem' }}>
+                  <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', letterSpacing: '0.1em', color: 'var(--stone)', textTransform: 'uppercase' }}>Progress</span>
+                  <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '1.1rem', color: 'var(--ink)' }}>{p.progress}%</span>
                 </div>
-                <div className="w-full h-[2px] bg-white/10 mt-2">
-                  <div className={`h-full ${index === 0 ? 'bg-red-500 w-[72%]' : 'bg-white/50 w-[35%]'}`}></div>
-                </div>
-              </div>
+                <ProgressBar value={p.progress} signal={i === 0} />
+              </motion.div>
             ))}
           </div>
         </section>
 
-        {/* CENTER: MAJOR WORKSTREAMS */}
-        <section className="col-span-1 xl:col-span-4 flex flex-col">
-          <h2 className="text-xs font-bold tracking-[0.2em] uppercase mb-6 flex items-center">
-            <span className="w-2 h-2 bg-blue-500 mr-2"></span>
-            Major Workstreams
-          </h2>
-          <div className="grid grid-cols-1 gap-3">
-            {WORKSTREAMS.map(ws => {
-              const borderColor = ws.status === 'On Track' ? 'border-green-500' : ws.status === 'At Risk' ? 'border-yellow-500' : ws.status === 'Delayed' ? 'border-red-500' : 'border-white/20';
-              const progressColor = ws.status === 'On Track' ? 'bg-green-500' : ws.status === 'At Risk' ? 'bg-yellow-500' : ws.status === 'Delayed' ? 'bg-red-500' : 'bg-white/20';
-              return (
-                <div key={ws.id} className={`flex flex-col p-4 bg-white/5 border-l-2 ${borderColor}`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-lg font-bold">{ws.name}</p>
-                      <p className="text-[10px] opacity-40 uppercase mt-1 flex items-center gap-1">
-                        <Users size={10} /> Lead: {ws.lead}
-                      </p>
-                    </div>
-                    <div className="text-right font-mono text-sm">{ws.status}</div>
+        {/* Major Workstreams */}
+        <section>
+          <SectionLabel>Major Workstreams</SectionLabel>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {WORKSTREAMS.map((ws, i) => (
+              <motion.div
+                key={ws.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: i * 0.07 }}
+                style={{ background: 'var(--paper)', border: '1px solid var(--ash)', borderLeft: `2px solid ${ws.status === 'On Track' ? '#4A4A3A' : 'var(--signal)'}`, padding: '1rem 1.25rem' }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                  <div>
+                    <p style={{ fontSize: '0.95rem', fontWeight: 500, margin: 0, color: 'var(--ink)' }}>{ws.name}</p>
+                    <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', color: 'var(--stone)', margin: '3px 0 0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                      Lead: {ws.lead}
+                    </p>
                   </div>
-                  <div className="mt-4 flex justify-between items-end">
-                    <span className="text-[10px] opacity-40 uppercase font-bold flex items-center gap-1"><Activity size={10} /> Progress</span>
-                    <span className="text-xl font-mono">{ws.progress}%</span>
-                  </div>
-                  <div className="w-full h-[2px] bg-white/10 mt-2">
-                    <div className={`h-full ${progressColor}`} style={{ width: `${ws.progress}%` }}></div>
-                  </div>
+                  <StatusBadge status={ws.status} />
                 </div>
-              );
-            })}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.4rem' }}>
+                  <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', color: 'var(--stone)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Progress</span>
+                  <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.95rem', color: 'var(--graphite)' }}>{ws.progress}%</span>
+                </div>
+                <ProgressBar value={ws.progress} signal={ws.status !== 'On Track'} />
+              </motion.div>
+            ))}
           </div>
         </section>
 
-        {/* RIGHT: TEAM WORKLOAD */}
-        <section className="col-span-1 xl:col-span-4 flex flex-col">
-          <h2 className="text-xs font-bold tracking-[0.2em] uppercase mb-6 flex items-center">
-            <span className="w-2 h-2 bg-purple-500 mr-2"></span>
-            Team Workload
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {TEAM_MEMBERS.map(member => {
-              const isHigh = member.workload >= 90;
-              const isIdeal = member.workload >= 50 && member.workload < 90;
-              const badgeClass = isHigh ? 'bg-red-500/20 text-red-400' : isIdeal ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400';
-              const label = isHigh ? 'High' : isIdeal ? 'Ideal' : 'Open';
-              const barColor = isHigh ? 'bg-red-500' : isIdeal ? 'bg-yellow-500' : 'bg-green-500';
-              
-              const gradients = [
-                'from-purple-500 to-pink-500',
-                'from-blue-500 to-cyan-500',
-                'from-orange-500 to-yellow-500',
-                'from-indigo-500 to-purple-500'
-              ];
-              const gradient = gradients[(member.id - 1) % gradients.length];
-              
-              return (
-                <div 
-                  key={member.id} 
-                  onClick={() => setSelectedMember(member)}
-                  className="bg-[#1A1A1A] p-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors border border-transparent hover:border-white/10"
+        {/* Team Workload */}
+        <section>
+          <SectionLabel>Team Workload</SectionLabel>
+
+          <div style={{ display: 'flex', gap: '0.75rem', minHeight: 0 }}>
+            {/* Member list — compact when someone is selected, card grid otherwise */}
+            <motion.div
+              layout
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              style={{ display: 'flex', flexDirection: 'column', gap: selectedMember ? '0.375rem' : '0.625rem', width: selectedMember ? '160px' : '100%', flexShrink: 0 }}
+            >
+              {TEAM_MEMBERS.map((member, i) => {
+                const isSelected = selectedMember?.id === member.id;
+                return selectedMember ? (
+                  /* Compact row */
+                  <motion.button
+                    key={member.id}
+                    layout
+                    onClick={() => handleMemberClick(member)}
+                    style={{ background: isSelected ? 'var(--paper)' : 'transparent', border: `1px solid ${isSelected ? 'rgba(255,74,28,0.3)' : 'var(--ash)'}`, borderRadius: 4, padding: '0.625rem 0.75rem', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'background 120ms, border-color 120ms' }}
+                  >
+                    <p style={{ fontSize: '0.78rem', fontWeight: 500, color: isSelected ? 'var(--ink)' : 'var(--graphite)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{member.name.split(' ')[0]}</p>
+                    <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.58rem', color: 'var(--stone)', margin: '2px 0 0', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{member.workload}%</p>
+                  </motion.button>
+                ) : (
+                  /* Full card */
+                  <motion.div
+                    key={member.id}
+                    layout
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: i * 0.07 }}
+                    onClick={() => handleMemberClick(member)}
+                    style={{ background: 'var(--paper)', border: '1px solid var(--ash)', borderRadius: 4, padding: '1rem', cursor: 'pointer', transition: 'border-color 120ms' }}
+                    whileHover={{ borderColor: 'rgba(240,235,226,0.15)' }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                      <div>
+                        <p style={{ fontWeight: 500, fontSize: '0.9rem', margin: 0, color: 'var(--ink)' }}>{member.name}</p>
+                        <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', color: 'var(--stone)', margin: '3px 0 0', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{member.role}</p>
+                      </div>
+                      <WorkloadBadge workload={member.workload} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.4rem' }}>
+                      <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', color: 'var(--stone)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Capacity</span>
+                      <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.95rem', color: 'var(--ink)' }}>{member.workload}%</span>
+                    </div>
+                    <ProgressBar value={member.workload} signal={member.workload >= 90} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--ash)' }}>
+                      <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', color: 'var(--stone)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Projects</span>
+                      <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.75rem', color: 'var(--graphite)' }}>{member.projects}</span>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+
+            {/* Detail panel — slides in when a member is selected */}
+            <AnimatePresence>
+              {selectedMember && (
+                <motion.div
+                  key={selectedMember.id}
+                  initial={{ opacity: 0, x: 16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 16 }}
+                  transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ flex: 1, background: 'var(--paper)', border: '1px solid rgba(255,74,28,0.2)', borderRadius: 4, padding: '1.25rem', overflow: 'hidden' }}
                 >
-                  <div className="flex justify-between items-start mb-4">
-                    <div className={`w-10 h-10 bg-gradient-to-tr ${gradient} rounded-full`}></div>
-                    <span className={`text-[10px] ${badgeClass} px-2 py-0.5 rounded flex items-center gap-1 uppercase`}>
-                      {isHigh && <Zap size={10} />}
-                      {label}
+                  <div style={{ marginBottom: '1.25rem' }}>
+                    <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 400, fontVariationSettings: '"SOFT" 20, "opsz" 144', letterSpacing: '-0.03em', lineHeight: 1, margin: '0 0 4px', color: 'var(--ink)' }}>
+                      {selectedMember.name}
+                    </h2>
+                    <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', color: 'var(--stone)', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>
+                      {selectedMember.role}
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '1px solid var(--ash)', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
+                    <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', color: 'var(--stone)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total Capacity</span>
+                    <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '1.5rem', color: selectedMember.workload >= 90 ? 'var(--signal)' : 'var(--ink)', lineHeight: 1 }}>
+                      {selectedMember.workload}%
                     </span>
                   </div>
-                  <p className="font-bold">{member.name}</p>
-                  <p className="text-[10px] opacity-50 uppercase">{member.role}</p>
-                  <div className="mt-4">
-                    <div className="flex justify-between text-[10px] mb-1 italic opacity-80">
-                      <span>Capacity</span>
-                      <span>{member.workload}%</span>
-                    </div>
-                    <div className="h-1 bg-white/10">
-                      <div className={`h-full ${barColor}`} style={{ width: `${member.workload}%` }}></div>
-                    </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {selectedMember.allocations.map((alloc, i) => (
+                      <motion.div
+                        key={alloc.name}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1], delay: i * 0.06 }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.4rem' }}>
+                          <span style={{ fontSize: '0.82rem', color: 'var(--graphite)', fontWeight: 400 }}>{alloc.name}</span>
+                          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.85rem', color: 'var(--ink)' }}>{alloc.percentage}%</span>
+                        </div>
+                        <ProgressBar value={alloc.percentage} signal={alloc.percentage >= 40} />
+                      </motion.div>
+                    ))}
                   </div>
-                  <div className="flex justify-between items-center pt-3 mt-3 border-t border-white/10 text-[10px] opacity-60">
-                    <span className="flex items-center gap-1"><Briefcase size={10} /> Projects</span>
-                    <span className="font-mono">{member.projects}</span>
-                  </div>
-                </div>
-              );
-            })}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </section>
       </main>
 
-      {/* Modal for Team Member Details */}
-      {selectedMember && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 bg-opacity-90 backdrop-blur-sm" onClick={() => setSelectedMember(null)}>
-          <div 
-            className="bg-[#0A0A0A] border border-white/20 p-6 md:p-10 w-full max-w-lg shadow-2xl relative"
-            onClick={e => e.stopPropagation()}
-          >
-            <button 
-              onClick={() => setSelectedMember(null)}
-              className="absolute top-4 right-4 md:top-6 md:right-6 text-white/40 hover:text-white transition-colors"
-            >
-              <X size={24} />
-            </button>
-            
-            <h2 className="text-4xl font-black uppercase leading-tight text-white">{selectedMember.name}</h2>
-            <p className="text-[10px] tracking-[0.2em] font-light opacity-60 mt-2 uppercase">{selectedMember.role}</p>
-
-            <div className="mt-8">
-              <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
-                <span className="text-xs font-bold tracking-[0.2em] uppercase text-white/50">Total Workload</span>
-                <span className="text-3xl font-mono leading-none">{selectedMember.workload}%</span>
-              </div>
-              
-              <div className="space-y-6 mt-6">
-                {selectedMember.allocations.map((alloc: any, i: number) => {
-                  const isHigh = alloc.percentage >= 40;
-                  return (
-                    <div key={i}>
-                      <div className="flex justify-between items-end mb-2">
-                        <span className="font-bold text-sm uppercase">{alloc.name}</span>
-                        <span className="font-mono text-lg">{alloc.percentage}%</span>
-                      </div>
-                      <div className="h-1 w-full bg-white/10">
-                        <div className={`h-full ${isHigh ? 'bg-red-500' : 'bg-blue-500'}`} style={{ width: `${alloc.percentage}%` }}></div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Footer Bar */}
-      <footer className="mt-12 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between text-[10px] tracking-widest uppercase gap-4 pb-4">
-        <div className="flex gap-4 md:gap-8 opacity-40 flex-wrap">
+      {/* Footer */}
+      <footer style={{ marginTop: '2.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--ash)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '2rem', fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', color: 'var(--stone)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
           <span>Session: 4920-A</span>
           <span>Status: Synchronized</span>
           <span>Server: US-EAST-1</span>
         </div>
-        <div className="font-bold md:text-right">SECURE ACCESS PORTAL — V2.4.1</div>
+        <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', color: 'var(--stone)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          Secure Access Portal — V2.4.1
+        </span>
       </footer>
     </div>
   );
