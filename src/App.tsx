@@ -16,8 +16,29 @@ const WORKSTREAMS = [
 ];
 
 const PRIORITIES = [
-  { id: 1, kicker: 'Critical Path', title: 'Accelerate User Onboarding', description: 'Decrease time to first value by 20% by simplifying the signup flow.', progress: 72 },
-  { id: 2, kicker: 'In Progress', title: 'SOC2 Compliance Audit', description: 'Complete all security policy reviews and technical implementations by end of August.', progress: 35 },
+  {
+    id: 1,
+    kicker: 'Critical Path',
+    title: 'Accelerate User Onboarding',
+    description: 'Decrease time to first value by 20% by simplifying the signup flow.',
+    nextStep: 'Finalize revised signup flow mockups with design team',
+    events: [
+      { label: 'Design Review', date: 'Apr 24' },
+      { label: 'Eng Handoff', date: 'Apr 29' },
+      { label: 'Beta Launch', date: 'May 12' },
+    ],
+  },
+  {
+    id: 2,
+    kicker: 'In Progress',
+    title: 'SOC2 Compliance Audit',
+    description: 'Complete all security policy reviews and technical implementations by end of August.',
+    nextStep: 'Submit access control policy docs to auditor',
+    events: [
+      { label: 'Auditor Check-in', date: 'Apr 26' },
+      { label: 'Policy Deadline', date: 'May 9' },
+    ],
+  },
 ];
 
 type Member = typeof TEAM_MEMBERS[number];
@@ -138,11 +159,22 @@ export default function App() {
                 <p style={{ fontSize: '0.8rem', color: 'var(--stone)', margin: '0 0 1.25rem', lineHeight: 1.5 }}>
                   {p.description}
                 </p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.4rem' }}>
-                  <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', letterSpacing: '0.1em', color: 'var(--stone)', textTransform: 'uppercase' }}>Progress</span>
-                  <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '1.1rem', color: 'var(--ink)' }}>{p.progress}%</span>
+
+                {/* Next step */}
+                <div style={{ borderTop: '1px solid var(--ash)', paddingTop: '0.875rem', marginBottom: '0.875rem' }}>
+                  <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.6rem', letterSpacing: '0.12em', color: 'var(--stone)', textTransform: 'uppercase', margin: '0 0 0.35rem' }}>Next Step</p>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--graphite)', margin: 0, lineHeight: 1.45 }}>{p.nextStep}</p>
                 </div>
-                <ProgressBar value={p.progress} signal={i === 0} />
+
+                {/* Upcoming events */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                  {p.events.map((ev) => (
+                    <div key={ev.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--graphite)' }}>{ev.label}</span>
+                      <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem', color: i === 0 ? 'var(--signal)' : 'var(--stone)', letterSpacing: '0.04em' }}>{ev.date}</span>
+                    </div>
+                  ))}
+                </div>
               </motion.div>
             ))}
           </div>
