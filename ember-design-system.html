@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ember — A design system for modern interfaces</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink:       #0E0E0E;
+    --graphite:  #2A2824;
+    --stone:     #8A857D;
+    --ash:       #E8E4DC;
+    --bone:      #F4EFE6;
+    --paper:     #FFFFFF;
+    --signal:    #FF4A1C;
+    --signal-ink:#B2300F;
+    --citron:    #E4FF47;
+    --sky:       #A9C8DC;
+    --bg:        var(--bone);
+    --surface:   var(--paper);
+    --fg:        var(--ink);
+    --muted:     var(--stone);
+    --line:      var(--ash);
+    --accent:    var(--signal);
+    --display:   'Fraunces', 'Times New Roman', serif;
+    --sans:      'Geist', system-ui, sans-serif;
+    --mono:      'Geist Mono', 'SF Mono', monospace;
+    --step-1:   clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem);
+    --step-0:   clamp(0.875rem, 0.85rem + 0.2vw, 0.9375rem);
+    --step-1b:  clamp(1rem, 0.95rem + 0.3vw, 1.0625rem);
+    --step-2:   clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+    --step-3:   clamp(1.75rem, 1.5rem + 1.2vw, 2.5rem);
+    --step-4:   clamp(2.5rem, 2rem + 2vw, 4rem);
+    --step-5:   clamp(3.5rem, 2.5rem + 4.5vw, 7rem);
+    --step-6:   clamp(5rem, 3rem + 9vw, 12rem);
+    --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px;
+    --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
+    --s-9: 96px; --s-10: 128px;
+    --r-xs: 2px; --r-sm: 4px; --r-md: 8px; --r-lg: 14px; --r-xl: 24px; --r-full: 999px;
+    --shadow-sm: 0 1px 2px rgba(14,14,14,0.04), 0 1px 1px rgba(14,14,14,0.03);
+    --shadow-md: 0 4px 14px rgba(14,14,14,0.06), 0 2px 4px rgba(14,14,14,0.04);
+    --shadow-lg: 0 24px 48px -12px rgba(14,14,14,0.14);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --dur-fast: 120ms;
+    --dur-base: 240ms;
+    --dur-slow: 480ms;
+  }
+
+  /* Dark theme — remaps the raw palette so every semantic token follows */
+  [data-theme="dark"] {
+    --ink:       #F0EBE2;   /* text becomes warm bone */
+    --paper:     #1F1C18;   /* card / raised surface */
+    --bone:      #141210;   /* page / sunken surface */
+    --ash:       #2A2824;   /* hairlines */
+    --stone:     #9A958D;   /* muted */
+    --graphite:  #D8D2C8;   /* body paragraph text */
+    --signal-ink:#FF7048;   /* hover on signal buttons, slightly lighter */
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.35), 0 1px 1px rgba(0,0,0,0.25);
+    --shadow-md: 0 4px 14px rgba(0,0,0,0.45), 0 2px 4px rgba(0,0,0,0.30);
+    --shadow-lg: 0 24px 48px -12px rgba(0,0,0,0.65);
+  }
+  [data-theme="dark"] .nav {
+    background: rgba(20, 18, 16, 0.72);
+  }
+  [data-theme="dark"] body::before {
+    opacity: 0.025;
+  }
+  [data-theme="dark"] .swatch-chip {
+    border-color: rgba(240, 235, 226, 0.10);
+  }
+
+  html { color-scheme: light dark; }
+  body { transition: background-color var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out); }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    font-size: var(--step-1b);
+    line-height: 1.55;
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection { background: var(--signal); color: var(--paper); }
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.05 0 0 0 0 0.05 0 0 0 0 0.05 0 0 0 0.35 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: 0.06;
+    pointer-events: none;
+    z-index: 100;
+    mix-blend-mode: multiply;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-variation-settings: "SOFT" 30, "opsz" 144;
+    letter-spacing: -0.02em;
+    line-height: 1.02;
+    margin: 0;
+    color: var(--ink);
+  }
+  h2 { font-size: var(--step-4); letter-spacing: -0.025em; }
+  h3 { font-size: var(--step-3); letter-spacing: -0.02em; line-height: 1.1; }
+  h4 { font-size: var(--step-2); font-family: var(--sans); font-weight: 500; letter-spacing: -0.01em; }
+  p  { margin: 0 0 1em; max-width: 62ch; color: var(--graphite); }
+  a  { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  code, .mono { font-family: var(--mono); font-size: 0.88em; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 var(--s-6); }
+  @media (max-width: 640px) { .wrap { padding: 0 var(--s-5); } }
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: saturate(140%) blur(14px);
+    -webkit-backdrop-filter: saturate(140%) blur(14px);
+    background: rgba(244, 239, 230, 0.78);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--s-4) var(--s-6);
+    max-width: 1240px; margin: 0 auto;
+  }
+  .brand {
+    display: flex; align-items: center; gap: var(--s-3);
+    font-family: var(--display);
+    font-size: 1.25rem;
+    font-variation-settings: "SOFT" 0;
+    letter-spacing: -0.02em;
+  }
+  .brand-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--signal);
+    box-shadow: 0 0 0 4px rgba(255, 74, 28, 0.12);
+  }
+  .nav-links { display: flex; gap: var(--s-6); font-size: var(--step-0); }
+  .nav-links a {
+    text-decoration: none; color: var(--graphite);
+    transition: color var(--dur-fast) var(--ease-out);
+    position: relative;
+  }
+  .nav-links a:hover { color: var(--signal); }
+  .nav-badge {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-full);
+    color: var(--muted);
+  }
+  @media (max-width: 760px) { .nav-links { display: none; } }
+
+  .nav-right { display: flex; align-items: center; gap: var(--s-3); }
+  .theme-toggle {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--r-full);
+    width: 34px; height: 34px;
+    display: grid; place-items: center;
+    cursor: pointer;
+    color: var(--fg);
+    transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+  }
+  .theme-toggle:hover { border-color: var(--fg); color: var(--signal); transform: rotate(-12deg); }
+  .theme-toggle svg { display: block; }
+  .theme-toggle .moon { display: none; }
+  [data-theme="dark"] .theme-toggle .sun { display: none; }
+  [data-theme="dark"] .theme-toggle .moon { display: block; }
+  .hero {
+    padding: var(--s-10) 0 var(--s-9);
+    position: relative;
+    overflow: hidden;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: var(--step-1);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    display: flex; align-items: center; gap: var(--s-3);
+    margin-bottom: var(--s-6);
+  }
+  .eyebrow::before {
+    content: ""; width: 28px; height: 1px; background: var(--signal);
+  }
+  .hero h1 {
+    font-size: var(--step-6);
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+    font-variation-settings: "SOFT" 20, "opsz" 144, "wght" 400;
+  }
+  .hero h1 em {
+    font-style: italic;
+    font-variation-settings: "SOFT" 80, "opsz" 144, "wght" 300;
+    color: var(--signal);
+  }
+  .hero-lede {
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: var(--step-2);
+    line-height: 1.35;
+    max-width: 38ch;
+    color: var(--graphite);
+    margin-top: var(--s-6);
+    font-variation-settings: "SOFT" 50;
+  }
+  .hero-meta {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--s-5);
+    margin-top: var(--s-9);
+    padding-top: var(--s-5);
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: var(--step-1);
+  }
+  .hero-meta dt { color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .hero-meta dd { margin: 0; color: var(--ink); }
+  @media (max-width: 720px) {
+    .hero-meta { grid-template-columns: repeat(2, 1fr); gap: var(--s-5); }
+  }
+  section { padding: var(--s-10) 0; position: relative; }
+  .section-head {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: var(--s-6);
+    align-items: baseline;
+    margin-bottom: var(--s-8);
+    padding-bottom: var(--s-5);
+    border-bottom: 1px solid var(--line);
+  }
+  .section-num {
+    font-family: var(--mono);
+    font-size: var(--step-1);
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+  .section-head h2 { max-width: 20ch; }
+  .section-intro {
+    max-width: 60ch;
+    font-size: var(--step-2);
+    font-family: var(--display);
+    font-weight: 300;
+    font-variation-settings: "SOFT" 40;
+    color: var(--graphite);
+    line-height: 1.35;
+    margin-top: var(--s-5);
+  }
+  @media (max-width: 640px) {
+    .section-head { grid-template-columns: 1fr; gap: var(--s-3); }
+  }
+  .principles {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    margin-top: var(--s-7);
+  }
+  .principle {
+    background: var(--bone);
+    padding: var(--s-7);
+    display: grid;
+    gap: var(--s-4);
+    transition: background var(--dur-base) var(--ease-out);
+  }
+  .principle:hover { background: var(--paper); }
+  .principle-num {
+    font-family: var(--mono);
+    font-size: var(--step-1);
+    color: var(--signal);
+    letter-spacing: 0.1em;
+  }
+  .principle h4 { font-size: 1.375rem; font-weight: 500; }
+  .principle p { margin: 0; font-size: var(--step-0); color: var(--graphite); }
+  @media (max-width: 720px) { .principles { grid-template-columns: 1fr; } }
+  .color-groups { display: grid; gap: var(--s-8); }
+  .color-group-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: var(--s-4);
+    border-bottom: 1px dashed var(--line);
+    margin-bottom: var(--s-5);
+  }
+  .color-group-head h4 {
+    font-family: var(--display);
+    font-size: var(--step-3);
+    font-weight: 400;
+    font-variation-settings: "SOFT" 30;
+    letter-spacing: -0.02em;
+  }
+  .color-group-note { font-family: var(--mono); font-size: var(--step-1); color: var(--muted); }
+  .swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--s-4);
+  }
+  @media (max-width: 960px) { .swatch-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 520px) { .swatch-grid { grid-template-columns: repeat(2, 1fr); } }
+  .swatch {
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    background: transparent;
+    text-align: left;
+    font-family: inherit;
+    display: grid;
+    gap: var(--s-2);
+    transition: transform var(--dur-base) var(--ease-out);
+  }
+  .swatch:hover { transform: translateY(-3px); }
+  .swatch-chip {
+    aspect-ratio: 4/5;
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(14,14,14,0.08);
+  }
+  .swatch-chip::after {
+    content: "COPY";
+    position: absolute;
+    inset: auto 0 var(--s-3) 0;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--paper);
+    opacity: 0;
+    transition: opacity var(--dur-base) var(--ease-out);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .swatch:hover .swatch-chip::after { opacity: 0.9; }
+  .swatch.copied .swatch-chip::after { content: "COPIED"; opacity: 1; color: var(--paper); }
+  .swatch-name { font-size: var(--step-0); font-weight: 500; }
+  .swatch-hex { font-family: var(--mono); font-size: var(--step-1); color: var(--muted); }
+  .color-usage {
+    margin-top: var(--s-8);
+    padding: var(--s-7);
+    background: var(--paper);
+    border-radius: var(--r-lg);
+    border: 1px solid var(--line);
+  }
+  .usage-bar {
+    display: flex;
+    height: 52px;
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    margin-bottom: var(--s-4);
+  }
+  .usage-bar span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: var(--paper);
+  }
+  .usage-legend {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--s-4);
+    font-size: var(--step-1);
+  }
+  .usage-legend div { display: flex; gap: var(--s-3); align-items: center; }
+  .usage-legend i {
+    width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
+  }
+  @media (max-width: 640px) { .usage-legend { grid-template-columns: repeat(2, 1fr); } }
+  .type-specimen {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: var(--s-7);
+    padding: var(--s-6) 0;
+    border-bottom: 1px solid var(--line);
+    align-items: baseline;
+  }
+  .type-specimen:last-child { border-bottom: none; }
+  .type-meta { font-family: var(--mono); font-size: var(--step-1); color: var(--muted); }
+  .type-meta div + div { margin-top: 2px; }
+  .type-sample { color: var(--ink); }
+  .type-display-1 {
+    font-family: var(--display);
+    font-size: var(--step-5);
+    font-weight: 400;
+    font-variation-settings: "SOFT" 20, "opsz" 144;
+    letter-spacing: -0.035em;
+    line-height: 0.95;
+  }
+  .type-display-2 {
+    font-family: var(--display);
+    font-size: var(--step-4);
+    font-weight: 400;
+    font-variation-settings: "SOFT" 40, "opsz" 144;
+    letter-spacing: -0.025em;
+    line-height: 1;
+  }
+  .type-heading {
+    font-family: var(--sans);
+    font-size: var(--step-2);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+  .type-body {
+    font-family: var(--sans);
+    font-size: var(--step-1b);
+    font-weight: 400;
+    line-height: 1.55;
+    max-width: 52ch;
+  }
+  .type-small {
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    color: var(--graphite);
+    line-height: 1.5;
+  }
+  .type-mono {
+    font-family: var(--mono);
+    font-size: var(--step-0);
+    letter-spacing: 0;
+  }
+  .font-pairing {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s-5);
+    margin-bottom: var(--s-8);
+  }
+  .font-card {
+    padding: var(--s-6);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    position: relative;
+  }
+  .font-card .aa {
+    font-size: 6rem;
+    line-height: 0.85;
+    letter-spacing: -0.04em;
+  }
+  .font-card-meta {
+    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-size: var(--step-1);
+    color: var(--muted);
+    margin-top: var(--s-5);
+    padding-top: var(--s-4);
+    border-top: 1px solid var(--line);
+  }
+  .font-card.display .aa { font-family: var(--display); font-variation-settings: "SOFT" 40, "opsz" 144; }
+  .font-card.sans .aa { font-family: var(--sans); font-weight: 500; }
+  @media (max-width: 720px) {
+    .font-pairing { grid-template-columns: 1fr; }
+    .type-specimen { grid-template-columns: 1fr; gap: var(--s-3); }
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s-7);
+  }
+  @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
+  .space-scale {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    margin-top: var(--s-5);
+  }
+  .space-row {
+    display: grid;
+    grid-template-columns: 60px 80px 1fr;
+    gap: var(--s-4);
+    align-items: center;
+    font-family: var(--mono);
+    font-size: var(--step-1);
+  }
+  .space-row-label { color: var(--ink); }
+  .space-row-px { color: var(--muted); }
+  .space-row-bar {
+    height: 10px;
+    background: var(--signal);
+    border-radius: 2px;
+  }
+  .radius-row {
+    display: flex;
+    gap: var(--s-4);
+    flex-wrap: wrap;
+    margin-top: var(--s-5);
+  }
+  .radius-demo {
+    flex: 1;
+    min-width: 90px;
+    aspect-ratio: 1;
+    background: var(--graphite);
+    position: relative;
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    padding: var(--s-3);
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+  }
+  .component-block {
+    padding: var(--s-7);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    margin-bottom: var(--s-5);
+  }
+  .component-title {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: var(--s-5);
+    padding-bottom: var(--s-3);
+    border-bottom: 1px dashed var(--line);
+  }
+  .component-title h4 { font-size: 1.125rem; font-weight: 500; }
+  .component-title .mono { color: var(--muted); }
+  .btn {
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    gap: var(--s-2);
+    padding: 10px 20px;
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    border-radius: var(--r-full);
+    border: 1px solid transparent;
+    background: var(--ink);
+    color: var(--paper);
+    cursor: pointer;
+    transition:
+      background var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out),
+      border-color var(--dur-fast) var(--ease-out);
+    text-decoration: none;
+  }
+  .btn:hover { background: var(--graphite); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn.primary { background: var(--signal); color: var(--paper); }
+  .btn.primary:hover { background: var(--signal-ink); }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--ink); }
+  .btn.ghost:hover { background: var(--ink); color: var(--paper); }
+  .btn.subtle { background: var(--ash); color: var(--ink); }
+  .btn.subtle:hover { background: var(--line); }
+  .btn.citron { background: var(--citron); color: var(--ink); }
+  .btn.citron:hover { background: #D4EF37; }
+  .btn.sm { padding: 6px 14px; font-size: var(--step-1); }
+  .btn.lg { padding: 14px 28px; font-size: var(--step-1b); }
+  .btn-row { display: flex; gap: var(--s-3); flex-wrap: wrap; }
+  .input {
+    width: 100%;
+    font-family: var(--sans);
+    font-size: var(--step-1b);
+    padding: 12px 16px;
+    border: 1px solid var(--line);
+    background: var(--bone);
+    border-radius: var(--r-md);
+    color: var(--ink);
+    transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--signal);
+    background: var(--paper);
+    box-shadow: 0 0 0 3px rgba(255,74,28,0.15);
+  }
+  .input-label {
+    display: block;
+    font-size: var(--step-1);
+    color: var(--muted);
+    margin-bottom: var(--s-2);
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .input-group + .input-group { margin-top: var(--s-4); }
+  .card-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--s-5);
+  }
+  @media (max-width: 720px) { .card-row { grid-template-columns: 1fr; } }
+  .card {
+    padding: var(--s-6);
+    background: var(--bone);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .card-kicker {
+    font-family: var(--mono); font-size: var(--step-1);
+    color: var(--signal);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: var(--s-3);
+  }
+  .card h4 {
+    font-family: var(--display); font-weight: 400;
+    font-variation-settings: "SOFT" 30, "opsz" 144;
+    font-size: var(--step-3);
+    line-height: 1.05; letter-spacing: -0.02em;
+    margin-bottom: var(--s-3);
+  }
+  .card p { font-size: var(--step-0); margin-bottom: var(--s-4); }
+  .badge {
+    display: inline-flex;
+    align-items: center; gap: var(--s-2);
+    padding: 3px 10px;
+    font-family: var(--mono); font-size: 0.72rem;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    border-radius: var(--r-full);
+    background: var(--ash); color: var(--graphite);
+  }
+  .badge.signal { background: var(--signal); color: var(--paper); }
+  .badge.citron { background: var(--citron); color: var(--ink); }
+  .badge.outline { background: transparent; border: 1px solid var(--ink); color: var(--ink); }
+  .badge-row { display: flex; gap: var(--s-3); flex-wrap: wrap; }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .alert {
+    display: flex; gap: var(--s-4);
+    padding: var(--s-5);
+    border-radius: var(--r-md);
+    background: var(--bone);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--signal);
+  }
+  .alert-icon {
+    flex-shrink: 0;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--signal); color: var(--paper);
+    display: grid; place-items: center;
+    font-family: var(--display); font-weight: 500;
+  }
+  .alert strong { display: block; font-size: var(--step-1b); margin-bottom: 2px; }
+  .alert p { font-size: var(--step-0); margin: 0; color: var(--graphite); }
+  .motion-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s-5);
+    margin-top: var(--s-6);
+  }
+  @media (max-width: 720px) { .motion-grid { grid-template-columns: 1fr; } }
+  .motion-card {
+    padding: var(--s-6);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+  }
+  .motion-card h4 { font-size: var(--step-1b); font-weight: 500; margin-bottom: var(--s-2); }
+  .motion-card p { font-size: var(--step-0); margin-bottom: var(--s-5); color: var(--muted); }
+  .motion-demo {
+    height: 60px;
+    background: var(--bone);
+    border-radius: var(--r-sm);
+    position: relative;
+    overflow: hidden;
+  }
+  .motion-ball {
+    position: absolute;
+    top: 50%; left: var(--s-3);
+    width: 26px; height: 26px;
+    background: var(--signal);
+    border-radius: 50%;
+    transform: translateY(-50%);
+  }
+  .motion-card:hover .ease-out { animation: slide 1.2s var(--ease-out) infinite alternate; }
+  .motion-card:hover .ease-in-out { animation: slide 1.2s var(--ease-in-out) infinite alternate; }
+  .motion-card:hover .linear { animation: slide 1.2s linear infinite alternate; }
+  @keyframes slide {
+    from { left: var(--s-3); }
+    to { left: calc(100% - 26px - var(--s-3)); }
+  }
+  .rule-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s-5);
+    margin-top: var(--s-6);
+  }
+  @media (max-width: 720px) { .rule-grid { grid-template-columns: 1fr; } }
+  .rule {
+    padding: var(--s-6);
+    border-radius: var(--r-lg);
+    border: 1px solid var(--line);
+    background: var(--paper);
+  }
+  .rule-tag {
+    display: inline-flex;
+    align-items: center; gap: var(--s-2);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: var(--r-full);
+    margin-bottom: var(--s-4);
+  }
+  .rule-tag.do { background: var(--citron); color: var(--ink); }
+  .rule-tag.dont { background: var(--ink); color: var(--paper); }
+  .rule h4 { font-size: var(--step-1b); font-weight: 500; margin-bottom: var(--s-3); }
+  .rule p { font-size: var(--step-0); margin: 0; }
+  footer {
+    padding: var(--s-10) 0 var(--s-7);
+    border-top: 1px solid var(--line);
+    margin-top: var(--s-10);
+  }
+  .footer-hero {
+    font-family: var(--display);
+    font-size: var(--step-5);
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    font-variation-settings: "SOFT" 20, "opsz" 144;
+    max-width: 16ch;
+    margin-bottom: var(--s-8);
+  }
+  .footer-hero em {
+    font-style: italic;
+    font-variation-settings: "SOFT" 80, "opsz" 144;
+    color: var(--signal);
+  }
+  .footer-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: var(--step-1);
+    color: var(--muted);
+    padding-top: var(--s-5);
+    border-top: 1px solid var(--line);
+    flex-wrap: wrap;
+    gap: var(--s-4);
+  }
+  .fade-up { opacity: 0; transform: translateY(20px); transition: opacity 800ms var(--ease-out), transform 800ms var(--ease-out); }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span>Ember</span>
+    </div>
+    <div class="nav-links">
+      <a href="#principles">Principles</a>
+      <a href="#color">Color</a>
+      <a href="#type">Type</a>
+      <a href="#space">Space</a>
+      <a href="#components">Components</a>
+      <a href="#motion">Motion</a>
+    </div>
+    <div class="nav-right">
+      <button class="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <svg class="sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        <svg class="moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <span class="nav-badge mono">v1.0</span>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">A design system for modern interfaces</div>
+    <h1>
+      Quiet by default.<br />
+      <em>Loud</em> where it matters.
+    </h1>
+    <p class="hero-lede">
+      Ember is a small, opinionated set of rules for building calm, confident websites and apps. Neutral foundations, a single well-placed spark of color, and the restraint to let content breathe.
+    </p>
+    <dl class="hero-meta">
+      <div><dt>System</dt><dd>Ember 1.0</dd></div>
+      <div><dt>Scope</dt><dd>Web &amp; Mobile</dd></div>
+      <div><dt>Accent</dt><dd>Signal #FF4A1C</dd></div>
+      <div><dt>Contrast</dt><dd>WCAG 2.1 AA</dd></div>
+    </dl>
+  </div>
+</header>
+
+<section id="principles">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-num">01 — PRINCIPLES</div>
+      <div>
+        <h2>Five ideas that guide every pixel.</h2>
+        <p class="section-intro">Design systems are only as good as the principles behind them. These are ours.</p>
+      </div>
+    </div>
+    <div class="principles">
+      <div class="principle">
+        <div class="principle-num">P.01</div>
+        <h4>Clarity over cleverness</h4>
+        <p>If a label, layout, or interaction needs an explanation, rework it. The best interfaces feel obvious in retrospect.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">P.02</div>
+        <h4>Restraint with color</h4>
+        <p>Neutrals do 90% of the work. Accent color is reserved for moments that genuinely deserve attention — primary actions, active states, critical alerts.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">P.03</div>
+        <h4>Type is the interface</h4>
+        <p>Hierarchy, rhythm, and readability are set through typography first. Decoration follows; it never leads.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">P.04</div>
+        <h4>Motion with purpose</h4>
+        <p>Every animation answers a question: where did this come from, where did it go, what changed? No decorative loops, no attention grabs.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">P.05</div>
+        <h4>Accessible by default</h4>
+        <p>Contrast, focus states, motion preferences, and keyboard paths are not features. They're entry conditions.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">P.06</div>
+        <h4>Consistency compounds</h4>
+        <p>Reuse tokens, reuse components, reuse patterns. The system is a promise to the user that the next screen will behave like the last.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="color">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-num">02 — COLOR</div>
+      <div>
+        <h2>A warm neutral foundation with two deliberate sparks.</h2>
+        <p class="section-intro">Bone and ink do the heavy lifting. Signal draws the eye exactly once per view. Citron is a rarer flourish — used on at most a single element.</p>
+      </div>
+    </div>
+    <div class="color-groups">
+      <div>
+        <div class="color-group-head">
+          <h4>Neutrals</h4>
+          <span class="color-group-note">Surfaces · Text · Lines</span>
+        </div>
+        <div class="swatch-grid">
+          <button class="swatch" data-hex="#FFFFFF"><div class="swatch-chip" style="background:#FFFFFF;"></div><div class="swatch-name">Paper</div><div class="swatch-hex">#FFFFFF</div></button>
+          <button class="swatch" data-hex="#F4EFE6"><div class="swatch-chip" style="background:#F4EFE6;"></div><div class="swatch-name">Bone</div><div class="swatch-hex">#F4EFE6</div></button>
+          <button class="swatch" data-hex="#E8E4DC"><div class="swatch-chip" style="background:#E8E4DC;"></div><div class="swatch-name">Ash</div><div class="swatch-hex">#E8E4DC</div></button>
+          <button class="swatch" data-hex="#8A857D"><div class="swatch-chip" style="background:#8A857D;"></div><div class="swatch-name">Stone</div><div class="swatch-hex">#8A857D</div></button>
+          <button class="swatch" data-hex="#2A2824"><div class="swatch-chip" style="background:#2A2824;"></div><div class="swatch-name">Graphite</div><div class="swatch-hex">#2A2824</div></button>
+          <button class="swatch" data-hex="#0E0E0E"><div class="swatch-chip" style="background:#0E0E0E;"></div><div class="swatch-name">Ink</div><div class="swatch-hex">#0E0E0E</div></button>
+        </div>
+      </div>
+      <div>
+        <div class="color-group-head">
+          <h4>Accents</h4>
+          <span class="color-group-note">Actions · States · Emphasis</span>
+        </div>
+        <div class="swatch-grid">
+          <button class="swatch" data-hex="#FF4A1C"><div class="swatch-chip" style="background:#FF4A1C;"></div><div class="swatch-name">Signal</div><div class="swatch-hex">#FF4A1C</div></button>
+          <button class="swatch" data-hex="#B2300F"><div class="swatch-chip" style="background:#B2300F;"></div><div class="swatch-name">Signal Ink</div><div class="swatch-hex">#B2300F</div></button>
+          <button class="swatch" data-hex="#E4FF47"><div class="swatch-chip" style="background:#E4FF47;"></div><div class="swatch-name">Citron</div><div class="swatch-hex">#E4FF47</div></button>
+          <button class="swatch" data-hex="#A9C8DC"><div class="swatch-chip" style="background:#A9C8DC;"></div><div class="swatch-name">Sky</div><div class="swatch-hex">#A9C8DC</div></button>
+        </div>
+      </div>
+      <div class="color-usage">
+        <h4 style="margin-bottom: var(--s-4); font-size: var(--step-1b);">Usage ratio</h4>
+        <p style="font-size: var(--step-0); margin-bottom: var(--s-5); color: var(--muted);">Aim for this distribution on any given screen. The accent earns its power by being scarce.</p>
+        <div class="usage-bar">
+          <span style="background: var(--bone); color: var(--ink); flex: 60;">60% BONE</span>
+          <span style="background: var(--ink); flex: 28;">28% INK</span>
+          <span style="background: var(--ash); color: var(--ink); flex: 8;">8% ASH</span>
+          <span style="background: var(--signal); flex: 3;">3%</span>
+          <span style="background: var(--citron); color: var(--ink); flex: 1;">1%</span>
+        </div>
+        <div class="usage-legend">
+          <div><i style="background: var(--bone); border: 1px solid var(--line);"></i> Bone — surface</div>
+          <div><i style="background: var(--ink);"></i> Ink — text</div>
+          <div><i style="background: var(--signal);"></i> Signal — primary action</div>
+          <div><i style="background: var(--citron);"></i> Citron — rare accent</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="type">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-num">03 — TYPOGRAPHY</div>
+      <div>
+        <h2>A serif with soul, a sans with spine.</h2>
+        <p class="section-intro">Fraunces brings warmth and voice to display moments. Geist handles everything functional with modern clarity. Geist Mono labels the structural bits.</p>
+      </div>
+    </div>
+    <div class="font-pairing">
+      <div class="font-card display">
+        <div class="aa">Aa</div>
+        <div class="font-card-meta">
+          <span>Fraunces · Variable</span>
+          <span>Display</span>
+        </div>
+      </div>
+      <div class="font-card sans">
+        <div class="aa">Aa</div>
+        <div class="font-card-meta">
+          <span>Geist · 300–700</span>
+          <span>UI / Body</span>
+        </div>
+      </div>
+    </div>
+    <div class="type-scale">
+      <div class="type-specimen">
+        <div class="type-meta"><div>Display · 01</div><div>Fraunces 400</div><div>clamp(3.5→7rem)</div></div>
+        <div class="type-sample type-display-1">Make it useful.</div>
+      </div>
+      <div class="type-specimen">
+        <div class="type-meta"><div>Display · 02</div><div>Fraunces 400</div><div>clamp(2.5→4rem)</div></div>
+        <div class="type-sample type-display-2">Then make it beautiful.</div>
+      </div>
+      <div class="type-specimen">
+        <div class="type-meta"><div>Heading</div><div>Geist 500</div><div>clamp(1.25→1.5rem)</div></div>
+        <div class="type-sample type-heading">Designed to be lived with, not just looked at.</div>
+      </div>
+      <div class="type-specimen">
+        <div class="type-meta"><div>Body</div><div>Geist 400</div><div>clamp(1→1.0625rem)</div></div>
+        <div class="type-sample type-body">Ember sets rhythm through a modest set of sizes. Each step is tuned to hold its role: display commands, headings guide, body reads, small signals context, and mono counts the grid.</div>
+      </div>
+      <div class="type-specimen">
+        <div class="type-meta"><div>Small</div><div>Geist 400</div><div>clamp(0.875→0.9375rem)</div></div>
+        <div class="type-sample type-small">Captions, metadata, supporting detail. Never below 14px on the web.</div>
+      </div>
+      <div class="type-specimen">
+        <div class="type-meta"><div>Mono</div><div>Geist Mono 400</div><div>var(--step-0)</div></div>
+        <div class="type-sample type-mono">SKU · 00-AX-1428 · ID 0x42F1 · ratio 1.618</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="space">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-num">04 — SPACE &amp; SHAPE</div>
+      <div>
+        <h2>An eight-point rhythm, softened corners.</h2>
+        <p class="section-intro">Spacing uses a 4/8 base scale. Every gap, pad, and margin snaps to it. Radii stay conservative — small for inputs, medium for cards, full-pill for actions.</p>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div>
+        <h4 style="font-family:var(--display); font-weight:400; font-size:var(--step-3); font-variation-settings:'SOFT' 30; letter-spacing:-0.02em;">Space scale</h4>
+        <div class="space-scale">
+          <div class="space-row"><span class="space-row-label">s-1</span><span class="space-row-px">4px</span><span class="space-row-bar" style="width:4px;"></span></div>
+          <div class="space-row"><span class="space-row-label">s-2</span><span class="space-row-px">8px</span><span class="space-row-bar" style="width:8px;"></span></div>
+          <div class="space-row"><span class="space-row-label">s-3</span><span class="space-row-px">12px</span><span class="space-row-bar" style="width:12px;"></span></div>
+          <div class="space-row"><span class="space-row-label">s-4</span><span class="space-row-px">16px</span><span class="space-row-bar" style="width:16px;"></span></div>
+          <div class="space-row"><span class="space-row-label">s-5</span><span class="space-row-px">24px</span><span class="space-row-bar" style="width:24px;"></span></div>
+          <div class="space-row"><span class="space-row-label">s-6</span><span class="space-row-px">32px</span><span class="space-row-bar" style="width:32px;"></span></div>
+          <div class="space-row"><span class="space-row-label">s-7</span><span class="space-row-px">48px</span><span class="space-row-bar" style="width:48px;"></span></div>
+          <div class="space-row"><span class="space-row-label">s-8</span><span class="space-row-px">64px</span><span class="space-row-bar" style="width:64px;"></span></div>
+          <div class="space-row"><span class="space-row-label">s-9</span><span class="space-row-px">96px</span><span class="space-row-bar" style="width:96px;"></span></div>
+          <div class="space-row"><span class="space-row-label">s-10</span><span class="space-row-px">128px</span><span class="space-row-bar" style="width:128px;"></span></div>
+        </div>
+      </div>
+      <div>
+        <h4 style="font-family:var(--display); font-weight:400; font-size:var(--step-3); font-variation-settings:'SOFT' 30; letter-spacing:-0.02em;">Radius</h4>
+        <p style="margin-top:var(--s-4); font-size:var(--step-0); color:var(--muted);">Sharper shapes for data-dense UI, softer shapes for marketing and content surfaces.</p>
+        <div class="radius-row">
+          <div class="radius-demo" style="border-radius:2px;">2</div>
+          <div class="radius-demo" style="border-radius:4px;">4</div>
+          <div class="radius-demo" style="border-radius:8px;">8</div>
+          <div class="radius-demo" style="border-radius:14px;">14</div>
+          <div class="radius-demo" style="border-radius:24px;">24</div>
+          <div class="radius-demo" style="border-radius:999px;">full</div>
+        </div>
+        <h4 style="font-family:var(--display); font-weight:400; font-size:var(--step-3); font-variation-settings:'SOFT' 30; letter-spacing:-0.02em; margin-top:var(--s-8);">Elevation</h4>
+        <p style="margin-top:var(--s-4); font-size:var(--step-0); color:var(--muted);">Three shadows, quietly layered. Lift comes from contrast, not drama.</p>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:var(--s-4); margin-top:var(--s-5);">
+          <div style="aspect-ratio:1; background:var(--paper); border-radius:var(--r-md); box-shadow:var(--shadow-sm); display:grid; place-items:center; font-family:var(--mono); font-size:var(--step-1); color:var(--muted);">sm</div>
+          <div style="aspect-ratio:1; background:var(--paper); border-radius:var(--r-md); box-shadow:var(--shadow-md); display:grid; place-items:center; font-family:var(--mono); font-size:var(--step-1); color:var(--muted);">md</div>
+          <div style="aspect-ratio:1; background:var(--paper); border-radius:var(--r-md); box-shadow:var(--shadow-lg); display:grid; place-items:center; font-family:var(--mono); font-size:var(--step-1); color:var(--muted);">lg</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="components">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-num">05 — COMPONENTS</div>
+      <div>
+        <h2>Small parts. Consistent behavior.</h2>
+        <p class="section-intro">Every component uses the same tokens. Swap a value, the whole system follows.</p>
+      </div>
+    </div>
+    <div class="component-block">
+      <div class="component-title"><h4>Buttons</h4><span class="mono">.btn · .primary · .ghost · .subtle · .citron</span></div>
+      <div class="btn-row">
+        <button class="btn primary">Primary action</button>
+        <button class="btn">Secondary</button>
+        <button class="btn ghost">Ghost</button>
+        <button class="btn subtle">Subtle</button>
+        <button class="btn citron">Citron</button>
+      </div>
+      <div class="btn-row" style="margin-top: var(--s-4);">
+        <button class="btn primary sm">Small</button>
+        <button class="btn primary">Default</button>
+        <button class="btn primary lg">Large</button>
+      </div>
+    </div>
+    <div class="component-block">
+      <div class="component-title"><h4>Inputs</h4><span class="mono">.input</span></div>
+      <div style="max-width:480px;">
+        <div class="input-group">
+          <label class="input-label" for="demo1">Email</label>
+          <input class="input" id="demo1" type="email" placeholder="you@domain.com" />
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="demo2">Note</label>
+          <input class="input" id="demo2" type="text" value="Focus state borrows the signal color" />
+        </div>
+      </div>
+    </div>
+    <div class="component-block">
+      <div class="component-title"><h4>Badges</h4><span class="mono">.badge · .signal · .citron · .outline</span></div>
+      <div class="badge-row">
+        <span class="badge"><span class="dot"></span>Default</span>
+        <span class="badge signal"><span class="dot"></span>Live</span>
+        <span class="badge citron">New</span>
+        <span class="badge outline">Beta</span>
+      </div>
+    </div>
+    <div class="component-block">
+      <div class="component-title"><h4>Cards</h4><span class="mono">.card</span></div>
+      <div class="card-row">
+        <div class="card">
+          <div class="card-kicker">Feature</div>
+          <h4>Built for long-form reading.</h4>
+          <p>Cards carry a single idea. Kicker, headline, supporting copy, one action. Resist the urge to stack more.</p>
+          <a href="#" class="btn sm ghost">Read more →</a>
+        </div>
+        <div class="card">
+          <div class="card-kicker">Case study</div>
+          <h4>Restraint scales better than novelty.</h4>
+          <p>When patterns repeat across screens, users learn the system once. Novelty is a tax they pay on every page.</p>
+          <a href="#" class="btn sm ghost">Read more →</a>
+        </div>
+      </div>
+    </div>
+    <div class="component-block">
+      <div class="component-title"><h4>Alert</h4><span class="mono">.alert</span></div>
+      <div class="alert">
+        <div class="alert-icon">!</div>
+        <div>
+          <strong>Signal is reserved for genuine signal.</strong>
+          <p>Use the accent stripe for errors, warnings, and state changes the user needs to see. For passive updates, prefer a neutral background.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="motion">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-num">06 — MOTION</div>
+      <div>
+        <h2>Fast, soft, and never in the way.</h2>
+        <p class="section-intro">Three durations. Three curves. Motion acknowledges cause and effect — nothing more. Respect prefers-reduced-motion.</p>
+      </div>
+    </div>
+    <div class="motion-grid">
+      <div class="motion-card">
+        <h4>Ease-out · 120ms</h4>
+        <p>Hover to preview. For entrances, reveals, expanding surfaces.</p>
+        <div class="motion-demo"><div class="motion-ball ease-out"></div></div>
+      </div>
+      <div class="motion-card">
+        <h4>Ease-in-out · 240ms</h4>
+        <p>Hover to preview. For transitions between two defined states.</p>
+        <div class="motion-demo"><div class="motion-ball ease-in-out"></div></div>
+      </div>
+      <div class="motion-card">
+        <h4>Linear · 480ms</h4>
+        <p>Hover to preview. For progress, loading, continuous motion only.</p>
+        <div class="motion-demo"><div class="motion-ball linear"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="rules">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-num">07 — APPLICATION</div>
+      <div>
+        <h2>How to use the system well.</h2>
+        <p class="section-intro">A handful of habits that keep Ember feeling like Ember across teams and quarters.</p>
+      </div>
+    </div>
+    <div class="rule-grid">
+      <div class="rule">
+        <span class="rule-tag do">DO</span>
+        <h4>Use Signal for a single primary action per view.</h4>
+        <p>One decision is always clearer than two. Secondary actions take the ink or ghost treatment.</p>
+      </div>
+      <div class="rule">
+        <span class="rule-tag dont">DON'T</span>
+        <h4>Paint sections or backgrounds with Signal.</h4>
+        <p>The accent loses its power at scale. Use it on components, not containers.</p>
+      </div>
+      <div class="rule">
+        <span class="rule-tag do">DO</span>
+        <h4>Pair Fraunces with generous space.</h4>
+        <p>Display type is already loud. Let it breathe — tight margins mute its effect.</p>
+      </div>
+      <div class="rule">
+        <span class="rule-tag dont">DON'T</span>
+        <h4>Mix Fraunces and Geist within a heading.</h4>
+        <p>Switch fonts across hierarchy levels, never within a single line. The break should feel deliberate.</p>
+      </div>
+      <div class="rule">
+        <span class="rule-tag do">DO</span>
+        <h4>Snap every spacing value to the scale.</h4>
+        <p>If you find yourself typing 14px or 22px, go up or down to the next token. Consistency is invisible and cumulative.</p>
+      </div>
+      <div class="rule">
+        <span class="rule-tag dont">DON'T</span>
+        <h4>Animate content that hasn't changed.</h4>
+        <p>Decorative motion erodes trust. If nothing updated, nothing should move.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-hero">
+      Small <em>system</em>.<br />
+      Long half-life.
+    </div>
+    <div class="footer-meta">
+      <span>EMBER · DESIGN SYSTEM · v1.0</span>
+      <span>Fraunces · Geist · Geist Mono</span>
+      <span>© 2026</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Theme toggle — respects stored preference, falls back to system
+  (function() {
+    const root = document.documentElement;
+    const stored = localStorage.getItem('ember-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (stored === 'dark' || (!stored && prefersDark)) root.setAttribute('data-theme', 'dark');
+  })();
+  document.querySelector('.theme-toggle').addEventListener('click', () => {
+    const root = document.documentElement;
+    const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    if (next === 'dark') root.setAttribute('data-theme', 'dark');
+    else root.removeAttribute('data-theme');
+    localStorage.setItem('ember-theme', next);
+  });
+
+  document.querySelectorAll('.swatch').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const hex = btn.dataset.hex;
+      try { await navigator.clipboard.writeText(hex); } catch (e) {}
+      btn.classList.add('copied');
+      setTimeout(() => btn.classList.remove('copied'), 1400);
+    });
+  });
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.section-head, .principle, .swatch, .component-block, .motion-card, .rule, .card, .footer-hero')
+    .forEach(el => { el.classList.add('fade-up'); observer.observe(el); });
+</script>
+
+</body>
+</html>
