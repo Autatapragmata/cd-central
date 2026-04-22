@@ -1,11 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
+// hourly: 8 slots, 9am–4pm today
+// daily: 10 slots, Mon–Fri × 2 weeks starting Apr 21
 const TEAM_MEMBERS = [
-  { id: 1, name: 'Alice Walker', role: 'Lead Designer', workload: 85, projects: 3, allocations: [{ name: 'Design System Reboot', percentage: 40 }, { name: 'Q3 Product Launch', percentage: 30 }, { name: 'Marketing Site', percentage: 15 }] },
-  { id: 2, name: 'Bob Chen', role: 'Frontend Engineer', workload: 60, projects: 2, allocations: [{ name: 'Mobile App Beta', percentage: 40 }, { name: 'Design System Reboot', percentage: 20 }] },
-  { id: 3, name: 'Clara Diaz', role: 'Product Manager', workload: 95, projects: 4, allocations: [{ name: 'Q3 Product Launch', percentage: 40 }, { name: 'Mobile App Beta', percentage: 30 }, { name: 'Infrastructure Scale', percentage: 15 }, { name: 'User Research', percentage: 10 }] },
-  { id: 4, name: 'David Smith', role: 'Backend Engineer', workload: 40, projects: 1, allocations: [{ name: 'Infrastructure Scale', percentage: 40 }] },
+  {
+    id: 1, name: 'Alice Walker', role: 'Lead Designer', workload: 85, projects: 3,
+    allocations: [{ name: 'Design System Reboot', percentage: 40 }, { name: 'Q3 Product Launch', percentage: 30 }, { name: 'Marketing Site', percentage: 15 }],
+    schedule: { hourly: [70, 90, 85, 75, 80, 90, 60, 50], daily: [85, 90, 75, 80, 70, 85, 90, 80, 75, 60] },
+  },
+  {
+    id: 2, name: 'Bob Chen', role: 'Frontend Engineer', workload: 60, projects: 2,
+    allocations: [{ name: 'Mobile App Beta', percentage: 40 }, { name: 'Design System Reboot', percentage: 20 }],
+    schedule: { hourly: [40, 60, 70, 55, 65, 50, 40, 45], daily: [60, 65, 55, 70, 45, 60, 50, 65, 55, 40] },
+  },
+  {
+    id: 3, name: 'Clara Diaz', role: 'Product Manager', workload: 95, projects: 4,
+    allocations: [{ name: 'Q3 Product Launch', percentage: 40 }, { name: 'Mobile App Beta', percentage: 30 }, { name: 'Infrastructure Scale', percentage: 15 }, { name: 'User Research', percentage: 10 }],
+    schedule: { hourly: [90, 100, 95, 85, 100, 90, 80, 95], daily: [95, 100, 90, 85, 95, 100, 90, 95, 80, 85] },
+  },
+  {
+    id: 4, name: 'David Smith', role: 'Backend Engineer', workload: 40, projects: 1,
+    allocations: [{ name: 'Infrastructure Scale', percentage: 40 }],
+    schedule: { hourly: [50, 40, 35, 60, 30, 45, 40, 25], daily: [40, 50, 35, 45, 30, 40, 55, 30, 45, 35] },
+  },
 ];
 
 const WORKSTREAMS = [
@@ -105,6 +123,78 @@ function ProgressBar({ value, signal = false }: { value: number; signal?: boolea
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
         style={{ height: '100%', background: signal ? 'var(--signal)' : 'var(--graphite)', borderRadius: 2 }}
       />
+    </div>
+  );
+}
+
+type Period = 'day' | 'week' | '2w';
+
+const DAY_LABELS  = ['9', '10', '11', '12', '1', '2', '3', '4'];
+const WEEK_LABELS = ['M', 'T', 'W', 'T', 'F'];
+const BIWEEK_LABELS = ['M', 'T', 'W', 'T', 'F', 'M', 'T', 'W', 'T', 'F'];
+
+function MiniBarChart({ schedule, period }: { schedule: { hourly: number[]; daily: number[] }; period: Period }) {
+  const values = period === 'day' ? schedule.hourly : period === 'week' ? schedule.daily.slice(0, 5) : schedule.daily;
+  const labels = period === 'day' ? DAY_LABELS : period === 'week' ? WEEK_LABELS : BIWEEK_LABELS;
+  const peak = Math.max(...values, 1);
+  const BAR_H = 42;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: BAR_H, borderBottom: '1px solid var(--ash)' }}>
+        {values.map((v, i) => {
+          const pct = v / peak;
+          const color = v >= 85 ? 'var(--signal)' : v <= 30 ? 'var(--citron)' : 'var(--graphite)';
+          return (
+            <motion.div
+              key={`${period}-${i}`}
+              initial={{ height: 0 }}
+              animate={{ height: Math.max(pct * BAR_H, 2) }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: i * 0.03 }}
+              style={{ flex: 1, background: color, borderRadius: '1px 1px 0 0', opacity: 0.85 }}
+            />
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', gap: 2 }}>
+        {labels.map((l, i) => (
+          <span key={i} style={{ flex: 1, fontFamily: "'Geist Mono', monospace", fontSize: '0.52rem', color: 'var(--stone)', textAlign: 'center', letterSpacing: 0 }}>
+            {l}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PeriodToggle({ value, onChange }: { value: Period; onChange: (p: Period) => void }) {
+  const options: { key: Period; label: string }[] = [
+    { key: 'day', label: 'Day' },
+    { key: 'week', label: 'Wk' },
+    { key: '2w', label: '2W' },
+  ];
+  return (
+    <div style={{ display: 'flex', border: '1px solid var(--ash)', borderRadius: 3, overflow: 'hidden' }}>
+      {options.map(o => (
+        <button
+          key={o.key}
+          onClick={() => onChange(o.key)}
+          style={{
+            fontFamily: "'Geist Mono', monospace",
+            fontSize: '0.6rem',
+            letterSpacing: '0.08em',
+            padding: '3px 8px',
+            background: value === o.key ? 'var(--ash)' : 'transparent',
+            color: value === o.key ? 'var(--ink)' : 'var(--stone)',
+            border: 'none',
+            borderLeft: o.key !== 'day' ? '1px solid var(--ash)' : 'none',
+            cursor: 'pointer',
+            transition: 'background 120ms, color 120ms',
+          }}
+        >
+          {o.label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -324,6 +414,7 @@ export default function App() {
   const [dateStr, setDateStr] = useState('');
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [priorities, setPriorities] = useState<Priority[]>(INITIAL_PRIORITIES);
+  const [period, setPeriod] = useState<Period>('week');
 
   useEffect(() => {
     const today = new Date();
@@ -435,7 +526,13 @@ export default function App() {
 
         {/* Team Workload */}
         <section>
-          <SectionLabel>Team Workload</SectionLabel>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.7rem', letterSpacing: '0.14em', color: 'var(--stone)', textTransform: 'uppercase', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--signal)', flexShrink: 0 }} />
+              Team Workload
+            </p>
+            <PeriodToggle value={period} onChange={setPeriod} />
+          </div>
 
           <div style={{ display: 'flex', gap: '0.75rem', minHeight: 0 }}>
             <motion.div
@@ -473,11 +570,7 @@ export default function App() {
                       </div>
                       <WorkloadBadge workload={member.workload} />
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.4rem' }}>
-                      <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', color: 'var(--stone)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Capacity</span>
-                      <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.95rem', color: 'var(--ink)' }}>{member.workload}%</span>
-                    </div>
-                    <ProgressBar value={member.workload} signal={member.workload >= 90} />
+                    <MiniBarChart schedule={member.schedule} period={period} />
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--ash)' }}>
                       <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', color: 'var(--stone)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Projects</span>
                       <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.75rem', color: 'var(--graphite)' }}>{member.projects}</span>
