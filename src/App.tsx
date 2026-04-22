@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const TEAM_MEMBERS = [
@@ -15,7 +15,18 @@ const WORKSTREAMS = [
   { id: 4, name: 'Mobile App Beta', status: 'Delayed', progress: 20, lead: 'Bob Chen' },
 ];
 
-const PRIORITIES = [
+type PriorityEvent = { label: string; date: string };
+type Priority = {
+  id: number;
+  kicker: string;
+  title: string;
+  description: string;
+  nextStep: string;
+  events: PriorityEvent[];
+  notes: string[];
+};
+
+const INITIAL_PRIORITIES: Priority[] = [
   {
     id: 1,
     kicker: 'Critical Path',
@@ -27,6 +38,7 @@ const PRIORITIES = [
       { label: 'Eng Handoff', date: 'Apr 29' },
       { label: 'Beta Launch', date: 'May 12' },
     ],
+    notes: [],
   },
   {
     id: 2,
@@ -38,6 +50,7 @@ const PRIORITIES = [
       { label: 'Auditor Check-in', date: 'Apr 26' },
       { label: 'Policy Deadline', date: 'May 9' },
     ],
+    notes: [],
   },
 ];
 
@@ -96,9 +109,221 @@ function ProgressBar({ value, signal = false }: { value: number; signal?: boolea
   );
 }
 
+const inputBase: React.CSSProperties = {
+  fontFamily: "'Geist Mono', monospace",
+  background: 'var(--bone)',
+  border: '1px solid var(--ash)',
+  borderRadius: 3,
+  color: 'var(--ink)',
+  outline: 'none',
+  userSelect: 'text',
+};
+
+type EditingDate = { priorityId: number; eventIndex: number };
+
+function PriorityCard({
+  priority,
+  isCritical,
+  index,
+  onUpdateDate,
+  onAddNote,
+  onDeleteNote,
+}: {
+  key?: React.Key;
+  priority: Priority;
+  isCritical: boolean;
+  index: number;
+  onUpdateDate: (priorityId: number, eventIndex: number, date: string) => void;
+  onAddNote: (priorityId: number, text: string) => void;
+  onDeleteNote: (priorityId: number, noteIndex: number) => void;
+}) {
+  const [editing, setEditing] = useState<EditingDate | null>(null);
+  const [dateDraft, setDateDraft] = useState('');
+  const [addingNote, setAddingNote] = useState(false);
+  const [noteDraft, setNoteDraft] = useState('');
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const noteInputRef = useRef<HTMLTextAreaElement>(null);
+
+  const startEditDate = (eventIndex: number, currentDate: string) => {
+    setEditing({ priorityId: priority.id, eventIndex });
+    setDateDraft(currentDate);
+    setTimeout(() => dateInputRef.current?.select(), 0);
+  };
+
+  const commitDate = () => {
+    if (editing && dateDraft.trim()) {
+      onUpdateDate(editing.priorityId, editing.eventIndex, dateDraft.trim());
+    }
+    setEditing(null);
+  };
+
+  const startAddNote = () => {
+    setAddingNote(true);
+    setNoteDraft('');
+    setTimeout(() => noteInputRef.current?.focus(), 0);
+  };
+
+  const commitNote = () => {
+    if (noteDraft.trim()) {
+      onAddNote(priority.id, noteDraft.trim());
+    }
+    setAddingNote(false);
+    setNoteDraft('');
+  };
+
+  const accentColor = isCritical ? 'var(--signal)' : 'var(--stone)';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: index * 0.08 }}
+      style={{ background: 'var(--paper)', border: `1px solid ${isCritical ? 'rgba(255,74,28,0.3)' : 'var(--ash)'}`, borderRadius: 4, padding: '1.5rem', opacity: isCritical ? 1 : 0.72 }}
+    >
+      {/* Kicker + title */}
+      <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.65rem', letterSpacing: '0.12em', color: accentColor, textTransform: 'uppercase', margin: '0 0 0.5rem' }}>
+        {priority.kicker}
+      </p>
+      <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 400, fontVariationSettings: '"SOFT" 30, "opsz" 144', letterSpacing: '-0.025em', lineHeight: 1.05, margin: '0 0 0.5rem', color: 'var(--ink)' }}>
+        {priority.title}
+      </h3>
+      <p style={{ fontSize: '0.8rem', color: 'var(--stone)', margin: '0 0 1.25rem', lineHeight: 1.5 }}>
+        {priority.description}
+      </p>
+
+      {/* Next step */}
+      <div style={{ borderTop: '1px solid var(--ash)', paddingTop: '0.875rem', marginBottom: '0.875rem' }}>
+        <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.6rem', letterSpacing: '0.12em', color: 'var(--stone)', textTransform: 'uppercase', margin: '0 0 0.35rem' }}>
+          Next Step
+        </p>
+        <p style={{ fontSize: '0.82rem', color: 'var(--graphite)', margin: 0, lineHeight: 1.45 }}>
+          {priority.nextStep}
+        </p>
+      </div>
+
+      {/* Upcoming events — dates are click-to-edit */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginBottom: priority.notes.length || addingNote ? '1rem' : 0 }}>
+        {priority.events.map((ev, ei) => {
+          const isEditingThis = editing?.priorityId === priority.id && editing?.eventIndex === ei;
+          return (
+            <div key={ev.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--graphite)' }}>{ev.label}</span>
+              {isEditingThis ? (
+                <input
+                  ref={dateInputRef}
+                  value={dateDraft}
+                  onChange={e => setDateDraft(e.target.value)}
+                  onBlur={commitDate}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') commitDate();
+                    if (e.key === 'Escape') setEditing(null);
+                  }}
+                  style={{ ...inputBase, fontSize: '0.72rem', padding: '1px 6px', width: '72px', textAlign: 'right', letterSpacing: '0.04em' }}
+                />
+              ) : (
+                <button
+                  onClick={() => startEditDate(ei, ev.date)}
+                  title="Click to edit date"
+                  style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem', color: accentColor, letterSpacing: '0.04em', background: 'none', border: 'none', cursor: 'text', padding: '1px 4px', borderRadius: 2, transition: 'background 120ms' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--ash)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                >
+                  {ev.date}
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Notes */}
+      <AnimatePresence>
+        {priority.notes.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            style={{ overflow: 'hidden', borderTop: '1px solid var(--ash)', paddingTop: '0.75rem', marginBottom: '0.75rem' }}
+          >
+            <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.6rem', letterSpacing: '0.12em', color: 'var(--stone)', textTransform: 'uppercase', margin: '0 0 0.4rem' }}>
+              Notes
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              {priority.notes.map((note, ni) => (
+                <motion.div
+                  key={ni}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}
+                  className="note-row"
+                >
+                  <p style={{ fontSize: '0.8rem', color: 'var(--graphite)', margin: 0, lineHeight: 1.45, flex: 1 }}>
+                    — {note}
+                  </p>
+                  <button
+                    onClick={() => onDeleteNote(priority.id, ni)}
+                    style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.65rem', color: 'var(--stone)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', lineHeight: 1, flexShrink: 0, transition: 'color 120ms' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--signal)')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--stone)')}
+                    title="Remove note"
+                  >
+                    ×
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Add note input */}
+      <AnimatePresence>
+        {addingNote && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            style={{ overflow: 'hidden', marginBottom: '0.5rem' }}
+          >
+            <textarea
+              ref={noteInputRef}
+              value={noteDraft}
+              onChange={e => setNoteDraft(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitNote(); }
+                if (e.key === 'Escape') { setAddingNote(false); setNoteDraft(''); }
+              }}
+              placeholder="Add a note… (Enter to save, Esc to cancel)"
+              rows={2}
+              style={{ ...inputBase, width: '100%', fontSize: '0.8rem', padding: '0.5rem 0.625rem', resize: 'none', lineHeight: 1.45, display: 'block', boxSizing: 'border-box' }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Add note trigger */}
+      {!addingNote && (
+        <button
+          onClick={startAddNote}
+          style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', letterSpacing: '0.1em', color: 'var(--stone)', textTransform: 'uppercase', background: 'none', border: '1px dashed var(--ash)', borderRadius: 3, padding: '4px 10px', cursor: 'pointer', marginTop: priority.notes.length > 0 ? 0 : '0.875rem', display: 'block', width: '100%', transition: 'border-color 120ms, color 120ms' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--stone)'; e.currentTarget.style.color = 'var(--graphite)'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--ash)'; e.currentTarget.style.color = 'var(--stone)'; }}
+        >
+          + Add note
+        </button>
+      )}
+    </motion.div>
+  );
+}
+
 export default function App() {
   const [dateStr, setDateStr] = useState('');
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [priorities, setPriorities] = useState<Priority[]>(INITIAL_PRIORITIES);
 
   useEffect(() => {
     const today = new Date();
@@ -110,6 +335,27 @@ export default function App() {
 
   const handleMemberClick = (member: Member) => {
     setSelectedMember(prev => prev?.id === member.id ? null : member);
+  };
+
+  const updateDate = (priorityId: number, eventIndex: number, date: string) => {
+    setPriorities(prev => prev.map(p =>
+      p.id !== priorityId ? p : {
+        ...p,
+        events: p.events.map((ev, i) => i === eventIndex ? { ...ev, date } : ev),
+      }
+    ));
+  };
+
+  const addNote = (priorityId: number, text: string) => {
+    setPriorities(prev => prev.map(p =>
+      p.id !== priorityId ? p : { ...p, notes: [...p.notes, text] }
+    ));
+  };
+
+  const deleteNote = (priorityId: number, noteIndex: number) => {
+    setPriorities(prev => prev.map(p =>
+      p.id !== priorityId ? p : { ...p, notes: p.notes.filter((_, i) => i !== noteIndex) }
+    ));
   };
 
   return (
@@ -142,40 +388,16 @@ export default function App() {
         <section>
           <SectionLabel>Priority Initiatives</SectionLabel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {PRIORITIES.map((p, i) => (
-              <motion.div
+            {priorities.map((p, i) => (
+              <PriorityCard
                 key={p.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: i * 0.08 }}
-                style={{ background: 'var(--paper)', border: `1px solid ${i === 0 ? 'rgba(255,74,28,0.3)' : 'var(--ash)'}`, borderRadius: 4, padding: '1.5rem', opacity: i === 0 ? 1 : 0.65 }}
-              >
-                <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.65rem', letterSpacing: '0.12em', color: i === 0 ? 'var(--signal)' : 'var(--stone)', textTransform: 'uppercase', margin: '0 0 0.5rem' }}>
-                  {p.kicker}
-                </p>
-                <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 400, fontVariationSettings: '"SOFT" 30, "opsz" 144', letterSpacing: '-0.025em', lineHeight: 1.05, margin: '0 0 0.5rem', color: 'var(--ink)' }}>
-                  {p.title}
-                </h3>
-                <p style={{ fontSize: '0.8rem', color: 'var(--stone)', margin: '0 0 1.25rem', lineHeight: 1.5 }}>
-                  {p.description}
-                </p>
-
-                {/* Next step */}
-                <div style={{ borderTop: '1px solid var(--ash)', paddingTop: '0.875rem', marginBottom: '0.875rem' }}>
-                  <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.6rem', letterSpacing: '0.12em', color: 'var(--stone)', textTransform: 'uppercase', margin: '0 0 0.35rem' }}>Next Step</p>
-                  <p style={{ fontSize: '0.82rem', color: 'var(--graphite)', margin: 0, lineHeight: 1.45 }}>{p.nextStep}</p>
-                </div>
-
-                {/* Upcoming events */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                  {p.events.map((ev) => (
-                    <div key={ev.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                      <span style={{ fontSize: '0.78rem', color: 'var(--graphite)' }}>{ev.label}</span>
-                      <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.72rem', color: i === 0 ? 'var(--signal)' : 'var(--stone)', letterSpacing: '0.04em' }}>{ev.date}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
+                priority={p}
+                isCritical={i === 0}
+                index={i}
+                onUpdateDate={updateDate}
+                onAddNote={addNote}
+                onDeleteNote={deleteNote}
+              />
             ))}
           </div>
         </section>
@@ -216,7 +438,6 @@ export default function App() {
           <SectionLabel>Team Workload</SectionLabel>
 
           <div style={{ display: 'flex', gap: '0.75rem', minHeight: 0 }}>
-            {/* Member list — compact when someone is selected, card grid otherwise */}
             <motion.div
               layout
               transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
@@ -225,7 +446,6 @@ export default function App() {
               {TEAM_MEMBERS.map((member, i) => {
                 const isSelected = selectedMember?.id === member.id;
                 return selectedMember ? (
-                  /* Compact row */
                   <motion.button
                     key={member.id}
                     layout
@@ -236,7 +456,6 @@ export default function App() {
                     <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.58rem', color: 'var(--stone)', margin: '2px 0 0', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{member.workload}%</p>
                   </motion.button>
                 ) : (
-                  /* Full card */
                   <motion.div
                     key={member.id}
                     layout
@@ -268,7 +487,6 @@ export default function App() {
               })}
             </motion.div>
 
-            {/* Detail panel — slides in when a member is selected */}
             <AnimatePresence>
               {selectedMember && (
                 <motion.div
@@ -287,14 +505,12 @@ export default function App() {
                       {selectedMember.role}
                     </p>
                   </div>
-
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '1px solid var(--ash)', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
                     <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '0.62rem', color: 'var(--stone)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total Capacity</span>
                     <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: '1.5rem', color: selectedMember.workload >= 90 ? 'var(--signal)' : 'var(--ink)', lineHeight: 1 }}>
                       {selectedMember.workload}%
                     </span>
                   </div>
-
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {selectedMember.allocations.map((alloc, i) => (
                       <motion.div
